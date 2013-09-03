@@ -1,0 +1,10 @@
+--- source/org/jivesoftware/smackx/ServiceDiscoveryManager.java
++++ source/org/jivesoftware/smackx/ServiceDiscoveryManager.java
+@@ -602,6 +681,7 @@
+         if (result.getType() == IQ.Type.ERROR) {
+             throw new XMPPException(result.getError());
+         }
++
+         return (DiscoverInfo) result;
+     }
+ 

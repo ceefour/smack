@@ -30,8 +30,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jivesoftware.smack.AbstractConnectionListener;
 import org.jivesoftware.smack.Connection;
-import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.PacketCollector;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.PacketIDFilter;
@@ -176,7 +176,8 @@ public class FileTransferNegotiator {
     public static IQ createIQ(final String ID, final String to,
             final String from, final IQ.Type type) {
         IQ iqPacket = new IQ() {
-            public String getChildElementXML() {
+            @Override
+			public String getChildElementXML() {
                 return null;
             }
         };
@@ -219,7 +220,7 @@ public class FileTransferNegotiator {
     }
 
     private void configureConnection(final Connection connection) {
-        connection.addConnectionListener(new ConnectionListener() {
+        connection.addConnectionListener(new AbstractConnectionListener() {
             public void connectionClosed() {
                 cleanup(connection);
             }

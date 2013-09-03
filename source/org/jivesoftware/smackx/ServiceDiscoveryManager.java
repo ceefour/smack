@@ -28,6 +28,7 @@ import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.PacketExtension;
 import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smackx.entitycaps.DefaultEntityCapsManager;
 import org.jivesoftware.smackx.entitycaps.EntityCapsManager;
 import org.jivesoftware.smackx.packet.DiscoverInfo;
 import org.jivesoftware.smackx.packet.DiscoverInfo.Identity;
@@ -186,7 +187,7 @@ public class ServiceDiscoveryManager {
 
         // Add a listener to the connection that removes the registered instance when
         // the connection is closed
-        connection.addConnectionListener(new ConnectionListener() {
+        connection.addConnectionListener(new AbstractConnectionListener() {
             public void connectionClosed() {
                 // Unregister this instance since the connection has been closed
                 instances.remove(connection);
@@ -495,7 +496,7 @@ public class ServiceDiscoveryManager {
             return discoverInfo(null, null);
 
         // Check if the have it cached in the Entity Capabilities Manager
-        DiscoverInfo info = EntityCapsManager.getDiscoverInfoByUser(entityID);
+        DiscoverInfo info = DefaultEntityCapsManager.getDiscoverInfoByUser(entityID);
 
         if (info != null) {
             // We were able to retrieve the information from Entity Caps and
@@ -505,7 +506,7 @@ public class ServiceDiscoveryManager {
 
         // Try to get the newest node#version if it's known, otherwise null is
         // returned
-        EntityCapsManager.NodeVerHash nvh = EntityCapsManager.getNodeVerHashByJid(entityID);
+        DefaultEntityCapsManager.NodeVerHash nvh = DefaultEntityCapsManager.getNodeVerHashByJid(entityID);
 
         // Discover by requesting the information from the remote entity
         // Note that wee need to use NodeVer as argument for Node if it exists
@@ -513,8 +514,8 @@ public class ServiceDiscoveryManager {
 
         // If the node version is known, store the new entry.
         if (nvh != null) {
-            if (EntityCapsManager.verifyDiscoverInfoVersion(nvh.getVer(), nvh.getHash(), info))
-                EntityCapsManager.addDiscoverInfoByNode(nvh.getNodeVer(), info);
+            if (DefaultEntityCapsManager.verifyDiscoverInfoVersion(nvh.getVer(), nvh.getHash(), info))
+                DefaultEntityCapsManager.addDiscoverInfoByNode(nvh.getNodeVer(), info);
         }
 
         return info;

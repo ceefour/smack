@@ -95,7 +95,8 @@ public class InBandBytestreamManager implements BytestreamManager {
      */
     static {
         Connection.addConnectionCreationListener(new ConnectionCreationListener() {
-            public void connectionCreated(Connection connection) {
+            @Override
+			public void connectionCreated(Connection connection) {
                 final InBandBytestreamManager manager;
                 manager = InBandBytestreamManager.getByteStreamManager(connection);
 
@@ -171,7 +172,7 @@ public class InBandBytestreamManager implements BytestreamManager {
      * list containing session IDs of In-Band Bytestream open packets that should be ignored by the
      * InitiationListener
      */
-    private List<String> ignoredBytestreamRequests = Collections.synchronizedList(new LinkedList<String>());
+    private final List<String> ignoredBytestreamRequests = Collections.synchronizedList(new LinkedList<String>());
 
     /**
      * Returns the InBandBytestreamManager to handle In-Band Bytestreams for a given
@@ -228,7 +229,8 @@ public class InBandBytestreamManager implements BytestreamManager {
      * 
      * @param listener the listener to register
      */
-    public void addIncomingBytestreamListener(BytestreamListener listener) {
+    @Override
+	public void addIncomingBytestreamListener(BytestreamListener listener) {
         this.allRequestListeners.add(listener);
     }
 
@@ -238,7 +240,8 @@ public class InBandBytestreamManager implements BytestreamManager {
      * 
      * @param listener the listener to remove
      */
-    public void removeIncomingBytestreamListener(BytestreamListener listener) {
+    @Override
+	public void removeIncomingBytestreamListener(BytestreamListener listener) {
         this.allRequestListeners.remove(listener);
     }
 
@@ -260,7 +263,8 @@ public class InBandBytestreamManager implements BytestreamManager {
      * @param listener the listener to register
      * @param initiatorJID the JID of the user that wants to establish an In-Band Bytestream
      */
-    public void addIncomingBytestreamListener(BytestreamListener listener, String initiatorJID) {
+    @Override
+	public void addIncomingBytestreamListener(BytestreamListener listener, String initiatorJID) {
         this.userListeners.put(initiatorJID, listener);
     }
 
@@ -269,7 +273,8 @@ public class InBandBytestreamManager implements BytestreamManager {
      * 
      * @param initiatorJID the JID of the user the listener should be removed
      */
-    public void removeIncomingBytestreamListener(String initiatorJID) {
+    @Override
+	public void removeIncomingBytestreamListener(String initiatorJID) {
         this.userListeners.remove(initiatorJID);
     }
 
@@ -392,7 +397,8 @@ public class InBandBytestreamManager implements BytestreamManager {
      * @throws XMPPException if the user doesn't support or accept in-band bytestreams, or if the
      *         user prefers smaller block sizes
      */
-    public InBandBytestreamSession establishSession(String targetJID) throws XMPPException {
+    @Override
+	public InBandBytestreamSession establishSession(String targetJID) throws XMPPException {
         String sessionID = getNextSessionID();
         return establishSession(targetJID, sessionID);
     }
@@ -407,7 +413,8 @@ public class InBandBytestreamManager implements BytestreamManager {
      * @throws XMPPException if the user doesn't support or accept in-band bytestreams, or if the
      *         user prefers smaller block sizes
      */
-    public InBandBytestreamSession establishSession(String targetJID, String sessionID)
+    @Override
+	public InBandBytestreamSession establishSession(String targetJID, String sessionID)
                     throws XMPPException {
         Open byteStreamRequest = new Open(sessionID, this.defaultBlockSize, this.stanza);
         byteStreamRequest.setTo(targetJID);

@@ -24,7 +24,6 @@ import org.jivesoftware.smack.packet.PacketExtension;
 import org.jivesoftware.smack.provider.PacketExtensionProvider;
 import org.jivesoftware.smackx.entitycaps.EntityCapsManager;
 import org.jivesoftware.smackx.entitycaps.packet.CapsExtension;
-
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 

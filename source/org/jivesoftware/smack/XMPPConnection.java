@@ -20,23 +20,6 @@
 
 package org.jivesoftware.smack;
 
-import org.jivesoftware.smack.compression.XMPPInputOutputStream;
-import org.jivesoftware.smack.filter.PacketFilter;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.packet.XMPPError;
-import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
-import org.jivesoftware.smack.util.StringUtils;
-import org.jivesoftware.smack.util.dns.HostAddress;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.PasswordCallback;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -56,6 +39,23 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.PasswordCallback;
+
+import org.jivesoftware.smack.compression.XMPPInputOutputStream;
+import org.jivesoftware.smack.filter.PacketFilter;
+import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
+import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smack.util.dns.HostAddress;
 
 /**
  * Creates a socket connection to a XMPP server. This is the default connection
@@ -190,14 +190,16 @@ public class XMPPConnection extends Connection {
         config.setCallbackHandler(callbackHandler);
     }
 
-    public String getConnectionID() {
+    @Override
+	public String getConnectionID() {
         if (!isConnected()) {
             return null;
         }
         return connectionID;
     }
 
-    public String getUser() {
+    @Override
+	public String getUser() {
         if (!isAuthenticated()) {
             return null;
         }
@@ -219,7 +221,8 @@ public class XMPPConnection extends Connection {
      *  
      * @return the active exception callback or null if there is none
      */
-    public ParsingExceptionCallback getParsingExceptionCallback() {
+    @Override
+	public ParsingExceptionCallback getParsingExceptionCallback() {
         return parsingExceptionCallback;
     }
 
@@ -348,7 +351,8 @@ public class XMPPConnection extends Connection {
         }
     }
 
-    public Roster getRoster() {
+    @Override
+	public Roster getRoster() {
         // synchronize against login()
         synchronized(this) {
             // if connection is authenticated the roster is already set by login() 
@@ -394,23 +398,28 @@ public class XMPPConnection extends Connection {
         return roster;
     }
 
-    public boolean isConnected() {
+    @Override
+	public boolean isConnected() {
         return connected;
     }
 
-    public boolean isSecureConnection() {
+    @Override
+	public boolean isSecureConnection() {
         return isUsingTLS();
     }
 
-    public boolean isSocketClosed() {
+    @Override
+	public boolean isSocketClosed() {
         return socketClosed;
     }
 
-    public boolean isAuthenticated() {
+    @Override
+	public boolean isAuthenticated() {
         return authenticated;
     }
 
-    public boolean isAnonymous() {
+    @Override
+	public boolean isAnonymous() {
         return anonymous;
     }
 
@@ -467,7 +476,8 @@ public class XMPPConnection extends Connection {
         saslAuthentication.init();
     }
 
-    public synchronized void disconnect(Presence unavailablePresence) {
+    @Override
+	public synchronized void disconnect(Presence unavailablePresence) {
         // If not connected, ignore this request.
         PacketReader packetReader = this.packetReader;
         PacketWriter packetWriter = this.packetWriter;
@@ -493,7 +503,8 @@ public class XMPPConnection extends Connection {
         packetReader.cleanup();
     }
 
-    public void sendPacket(Packet packet) {
+    @Override
+	public void sendPacket(Packet packet) {
         if (!isConnected()) {
             throw new IllegalStateException("Not connected to server.");
         }
@@ -513,7 +524,8 @@ public class XMPPConnection extends Connection {
      * @param packetFilter      the packet filter to use.
      * @deprecated replaced by {@link Connection#addPacketInterceptor(PacketInterceptor, PacketFilter)}.
      */
-    public void addPacketWriterInterceptor(PacketInterceptor packetInterceptor,
+    @Deprecated
+	public void addPacketWriterInterceptor(PacketInterceptor packetInterceptor,
             PacketFilter packetFilter) {
         addPacketInterceptor(packetInterceptor, packetFilter);
     }
@@ -524,7 +536,8 @@ public class XMPPConnection extends Connection {
      * @param packetInterceptor the packet interceptor to remove.
      * @deprecated replaced by {@link Connection#removePacketInterceptor(PacketInterceptor)}.
      */
-    public void removePacketWriterInterceptor(PacketInterceptor packetInterceptor) {
+    @Deprecated
+	public void removePacketWriterInterceptor(PacketInterceptor packetInterceptor) {
         removePacketInterceptor(packetInterceptor);
     }
 
@@ -540,7 +553,8 @@ public class XMPPConnection extends Connection {
      * @param packetFilter   the packet filter to use.
      * @deprecated replaced by {@link #addPacketSendingListener(PacketListener, PacketFilter)}.
      */
-    public void addPacketWriterListener(PacketListener packetListener, PacketFilter packetFilter) {
+    @Deprecated
+	public void addPacketWriterListener(PacketListener packetListener, PacketFilter packetFilter) {
         addPacketSendingListener(packetListener, packetFilter);
     }
 
@@ -550,7 +564,8 @@ public class XMPPConnection extends Connection {
      * @param packetListener the packet listener to remove.
      * @deprecated replaced by {@link #removePacketSendingListener(PacketListener)}.
      */
-    public void removePacketWriterListener(PacketListener packetListener) {
+    @Deprecated
+	public void removePacketWriterListener(PacketListener packetListener) {
         removePacketSendingListener(packetListener);
     }
 
@@ -770,7 +785,8 @@ public class XMPPConnection extends Connection {
      *
      * @param required true when the server indicates that TLS is required.
      */
-    void startTLSReceived(boolean required) {
+    @Override
+	void startTLSReceived(boolean required) {
         if (required && config.getSecurityMode() ==
                 ConnectionConfiguration.SecurityMode.disabled) {
             notifyConnectionError(new IllegalStateException(
@@ -798,7 +814,8 @@ public class XMPPConnection extends Connection {
      *
      * @throws Exception if an exception occurs.
      */
-    void proceedTLSReceived() throws Exception {
+    @Override
+	void proceedTLSReceived() throws Exception {
         SSLContext context = this.config.getCustomSSLContext();
         KeyStore ks = null;
         KeyManager[] kms = null;
@@ -900,7 +917,8 @@ public class XMPPConnection extends Connection {
      *
      * @param methods compression methods offered by the server.
      */
-    void setAvailableCompressionMethods(Collection<String> methods) {
+    @Override
+	void setAvailableCompressionMethods(Collection<String> methods) {
         compressionMethods = methods;
     }
 
@@ -924,7 +942,8 @@ public class XMPPConnection extends Connection {
         return null;
     }
 
-    public boolean isUsingCompression() {
+    @Override
+	public boolean isUsingCompression() {
         return compressionHandler != null && serverAckdCompression;
     }
 
@@ -986,7 +1005,8 @@ public class XMPPConnection extends Connection {
      *
      * @throws Exception if there is an exception starting stream compression.
      */
-    void startStreamCompression() throws Exception {
+    @Override
+	void startStreamCompression() throws Exception {
         serverAckdCompression = true;
         // Initialize the reader and writer with the new secured version
         initReaderAndWriter();
@@ -1005,7 +1025,8 @@ public class XMPPConnection extends Connection {
      * Notifies the XMPP connection that stream compression was denied so that
      * the connection process can proceed.
      */
-    void streamCompressionDenied() {
+    @Override
+	void streamCompressionDenied() {
         synchronized (this) {
             this.notify();
         }
@@ -1025,7 +1046,8 @@ public class XMPPConnection extends Connection {
      *      502). The error codes and wrapped exceptions can be used to present more
      *      appropriate error messages to end-users.
      */
-    public void connect() throws XMPPException {
+    @Override
+	public void connect() throws XMPPException {
         // Establishes the connection, readers and writers
         connectUsingConfiguration(config);
         // Automatically makes the login if the user was previously connected successfully
@@ -1069,7 +1091,8 @@ public class XMPPConnection extends Connection {
      *
      * @param e the exception that causes the connection close event.
      */
-    synchronized void notifyConnectionError(Exception e) {
+    @Override
+	synchronized void notifyConnectionError(Exception e) {
         // Listeners were already notified of the exception, return right here.
         if (packetReader.done && packetWriter.done) return;
 
@@ -1109,4 +1132,20 @@ public class XMPPConnection extends Connection {
             }
         }
     }
+
+	@Override
+	boolean hasPacketReader() {
+		return packetReader != null;
+	}
+
+	@Override
+	void setConnectionID(String connectionID) {
+		this.connectionID = connectionID;
+	}
+
+	@Override
+	void openWriterStream() throws IOException {
+		packetWriter.openStream();
+	}
+
 }

@@ -20,12 +20,12 @@
 
 package org.jivesoftware.smack;
 
-import org.jivesoftware.smack.packet.Packet;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+
+import org.jivesoftware.smack.packet.Packet;
 
 /**
  * Writes packets to a XMPP server. Packets are sent using a dedicated thread. Packet
@@ -42,7 +42,7 @@ class PacketWriter {
     private Thread writerThread;
     private Thread keepAliveThread;
     private Writer writer;
-    private XMPPConnection connection;
+    private final Connection connection;
     private final BlockingQueue<Packet> queue;
     volatile boolean done;
 
@@ -51,7 +51,7 @@ class PacketWriter {
      *
      * @param connection the connection.
      */
-    protected PacketWriter(XMPPConnection connection) {
+    protected PacketWriter(Connection connection) {
         this.queue = new ArrayBlockingQueue<Packet>(500, true);
         this.connection = connection;
         init();
@@ -66,7 +66,8 @@ class PacketWriter {
         done = false;
 
         writerThread = new Thread() {
-            public void run() {
+            @Override
+			public void run() {
                 writePackets(this);
             }
         };
@@ -213,7 +214,7 @@ class PacketWriter {
                 done = true;
                 // packetReader could be set to null by an concurrent disconnect() call.
                 // Therefore Prevent NPE exceptions by checking packetReader.
-                if (connection.packetReader != null) {
+                if (connection.hasPacketReader()) {
                         connection.notifyConnectionError(ioe);
                 }
             }

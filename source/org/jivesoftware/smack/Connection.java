@@ -20,6 +20,7 @@
 
 package org.jivesoftware.smack;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Constructor;
@@ -35,13 +36,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jivesoftware.smack.compression.Java7ZlibInputOutputStream;
 import org.jivesoftware.smack.compression.JzlibInputOutputStream;
 import org.jivesoftware.smack.compression.XMPPInputOutputStream;
-import org.jivesoftware.smack.compression.Java7ZlibInputOutputStream;
 import org.jivesoftware.smack.debugger.SmackDebugger;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
+import org.xmlpull.v1.XmlPullParser;
 
 /**
  * The abstract Connection class provides an interface for connections to a
@@ -81,6 +84,10 @@ import org.jivesoftware.smack.packet.Presence;
  * @see XMPPConnection
  * @author Matt Tucker
  * @author Guenther Niess
+ */
+/**
+ *
+ * @author ceefour
  */
 public abstract class Connection {
 
@@ -847,8 +854,8 @@ public abstract class Connection {
      */
     protected static class ListenerWrapper {
 
-        private PacketListener packetListener;
-        private PacketFilter packetFilter;
+        private final PacketListener packetListener;
+        private final PacketFilter packetFilter;
 
         /**
          * Create a class which associates a packet filter with a listener.
@@ -878,8 +885,8 @@ public abstract class Connection {
      */
     protected static class InterceptorWrapper {
 
-        private PacketInterceptor packetInterceptor;
-        private PacketFilter packetFilter;
+        private final PacketInterceptor packetInterceptor;
+        private final PacketFilter packetFilter;
 
         /**
          * Create a class which associates a packet filter with an interceptor.
@@ -892,7 +899,8 @@ public abstract class Connection {
             this.packetFilter = packetFilter;
         }
 
-        public boolean equals(Object object) {
+        @Override
+		public boolean equals(Object object) {
             if (object == null) {
                 return false;
             }
@@ -917,4 +925,100 @@ public abstract class Connection {
             }
         }
     }
+
+	/**
+	 * The exception can be ignored if the the connection is 'done'
+	 * or if the it was caused because the socket got closed
+	 * @return Whether socket is closed
+	 * @see PacketWriter#writePackets(Thread)
+	 */
+	abstract boolean isSocketClosed();
+
+	/**
+	 * packetReader could be set to null by an concurrent disconnect() call.
+	 * Therefore Prevent NPE exceptions by checking packetReader.
+	 * @return if packetReader != null
+	 * @see PacketWriter#writePackets(Thread)
+	 */
+	abstract boolean hasPacketReader();
+
+	/**
+	 * packetReader could be set to null by an concurrent disconnect() call.
+	 * Therefore Prevent NPE exceptions by checking packetReader.
+	 * @see PacketWriter#writePackets(Thread)
+	 */
+	abstract void notifyConnectionError(Exception ioe);
+
+	/**
+	 * Used by {@link AbstractPacketReader#startup()}.
+	 * @param connectionID
+	 * @see AbstractPacketReader#startup()
+	 */
+	abstract void setConnectionID(String connectionID);
+
+    /**
+     * Get the current active parsing exception callback.
+     * Used by {@link AbstractPacketReader#parsePackets(Thread)}
+     *  
+     * @return the active exception callback or null if there is none
+     * @see AbstractPacketReader#parsePackets(Thread)
+     */
+	abstract ParsingExceptionCallback getParsingExceptionCallback();
+
+    /**
+     * Notifies the XMPP connection that stream compression was denied so that
+     * the connection process can proceed.
+     * Used by {@link AbstractPacketReader#parsePackets(Thread)}
+     * @see AbstractPacketReader#parsePackets(Thread)
+     */
+    abstract void streamCompressionDenied();
+
+    /**
+     * The server has indicated that TLS negotiation can start. We now need to secure the
+     * existing plain connection and perform a handshake. This method won't return until the
+     * connection has finished the handshake or an error occured while securing the connection.
+     * Used by {@link AbstractPacketReader#parsePackets(Thread)}
+     *
+     * @throws Exception if an exception occurs.
+     * @see AbstractPacketReader#parsePackets(Thread)
+     */
+    abstract void proceedTLSReceived() throws Exception;
+    
+    /**
+     * We now need to bind a resource for the connection.
+     * Open a new stream and wait for the response.
+     * Used by {@link AbstractPacketReader#parsePackets(Thread)}
+     * @throws IOException 
+     * @see AbstractPacketReader#parsePackets(Thread)
+     */
+    abstract void openWriterStream() throws IOException;
+
+    /**
+     * Start using stream compression since the server has acknowledged stream compression.
+     * Used by {@link AbstractPacketReader#parsePackets(Thread)}
+     *
+     * @throws Exception if there is an exception starting stream compression.
+     * @see AbstractPacketReader#parsePackets(Thread)
+     */
+	abstract void startStreamCompression() throws Exception;
+
+    /**
+     * Sets the available stream compression methods offered by the server.
+     * Used by {@link AbstractPacketReader#parseFeatures(XmlPullParser)}
+     *
+     * @param methods compression methods offered by the server.
+     * @see AbstractPacketReader#parseFeatures(XmlPullParser)
+     */
+	abstract void setAvailableCompressionMethods(Collection<String> methods);
+
+    /**
+     * Notification message saying that the server supports TLS so confirm the server that we
+     * want to secure the connection.
+     * Used by {@link AbstractPacketReader#parseFeatures(XmlPullParser)}
+     *
+     * @param required true when the server indicates that TLS is required.
+     * @see AbstractPacketReader#parseFeatures(XmlPullParser)
+     */
+	abstract void startTLSReceived(boolean required);
+
 }

@@ -24,19 +24,15 @@ import java.io.IOException;
 import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-import org.jivesoftware.smack.Connection;
-import org.jivesoftware.smack.ConnectionCreationListener;
-import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.PacketCollector;
-import org.jivesoftware.smack.Roster;
-import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.parsing.ParsingExceptionCallback;
 import org.jivesoftware.smack.util.StringUtils;
 
 import com.kenai.jbosh.BOSHClient;
@@ -146,7 +142,8 @@ public class BOSHConnection extends Connection {
         this.config = config;
     }
 
-    public void connect() throws XMPPException {
+    @Override
+	public void connect() throws XMPPException {
         if (connected) {
             throw new IllegalStateException("Already connected to a server.");
         }
@@ -173,7 +170,8 @@ public class BOSHConnection extends Connection {
             // We'll use a single thread with an unbounded queue.
             listenerExecutor = Executors
                     .newSingleThreadExecutor(new ThreadFactory() {
-                        public Thread newThread(Runnable runnable) {
+                        @Override
+						public Thread newThread(Runnable runnable) {
                             Thread thread = new Thread(runnable,
                                     "Smack Listener Processor ("
                                             + connectionCounterValue + ")");
@@ -229,7 +227,8 @@ public class BOSHConnection extends Connection {
         }
     }
 
-    public String getConnectionID() {
+    @Override
+	public String getConnectionID() {
         if (!connected) {
             return null;
         } else if (authID != null) {
@@ -239,7 +238,8 @@ public class BOSHConnection extends Connection {
         }
     }
 
-    public Roster getRoster() {
+    @Override
+	public Roster getRoster() {
         if (roster == null) {
             return null;
         }
@@ -275,33 +275,40 @@ public class BOSHConnection extends Connection {
         return roster;
     }
 
-    public String getUser() {
+    @Override
+	public String getUser() {
         return user;
     }
 
-    public boolean isAnonymous() {
+    @Override
+	public boolean isAnonymous() {
         return anonymous;
     }
 
-    public boolean isAuthenticated() {
+    @Override
+	public boolean isAuthenticated() {
         return authenticated;
     }
 
-    public boolean isConnected() {
+    @Override
+	public boolean isConnected() {
         return connected;
     }
 
-    public boolean isSecureConnection() {
+    @Override
+	public boolean isSecureConnection() {
         // TODO: Implement SSL usage
         return false;
     }
 
-    public boolean isUsingCompression() {
+    @Override
+	public boolean isUsingCompression() {
         // TODO: Implement compression
         return false;
     }
 
-    public void login(String username, String password, String resource)
+    @Override
+	public void login(String username, String password, String resource)
             throws XMPPException {
         if (!isConnected()) {
             throw new IllegalStateException("Not connected to server.");
@@ -370,7 +377,8 @@ public class BOSHConnection extends Connection {
         }
     }
 
-    public void loginAnonymously() throws XMPPException {
+    @Override
+	public void loginAnonymously() throws XMPPException {
     	if (!isConnected()) {
             throw new IllegalStateException("Not connected to server.");
         }
@@ -414,7 +422,8 @@ public class BOSHConnection extends Connection {
         }
     }
 
-    public void sendPacket(Packet packet) {
+    @Override
+	public void sendPacket(Packet packet) {
         if (!isConnected()) {
             throw new IllegalStateException("Not connected to server.");
         }
@@ -442,7 +451,8 @@ public class BOSHConnection extends Connection {
         }
     }
 
-    public void disconnect(Presence unavailablePresence) {
+    @Override
+	public void disconnect(Presence unavailablePresence) {
         if (!connected) {
             return;
         }
@@ -589,15 +599,19 @@ public class BOSHConnection extends Connection {
     /**
      * Initialize the SmackDebugger which allows to log and debug XML traffic.
      */
-    protected void initDebugger() {
+    @Override
+	protected void initDebugger() {
         // TODO: Maybe we want to extend the SmackDebugger for simplification
         //       and a performance boost.
 
         // Initialize a empty writer which discards all data.
         writer = new Writer() {
-                public void write(char[] cbuf, int off, int len) { /* ignore */}
-                public void close() { /* ignore */ }
-                public void flush() { /* ignore */ }
+                @Override
+				public void write(char[] cbuf, int off, int len) { /* ignore */}
+                @Override
+				public void close() { /* ignore */ }
+                @Override
+				public void flush() { /* ignore */ }
             };
 
         // Initialize a pipe for received raw data.
@@ -614,7 +628,8 @@ public class BOSHConnection extends Connection {
 
         // Add listeners for the received and sent raw data.
         client.addBOSHClientResponseListener(new BOSHClientResponseListener() {
-            public void responseReceived(BOSHMessageEvent event) {
+            @Override
+			public void responseReceived(BOSHMessageEvent event) {
                 if (event.getBody() != null) {
                     try {
                         readerPipe.write(event.getBody().toXML());
@@ -626,7 +641,8 @@ public class BOSHConnection extends Connection {
             }
         });
         client.addBOSHClientRequestListener(new BOSHClientRequestListener() {
-            public void requestSent(BOSHMessageEvent event) {
+            @Override
+			public void requestSent(BOSHMessageEvent event) {
                 if (event.getBody() != null) {
                     try {
                         writer.write(event.getBody().toXML());
@@ -639,10 +655,11 @@ public class BOSHConnection extends Connection {
 
         // Create and start a thread which discards all read data.
         readerConsumer = new Thread() {
-            private Thread thread = this;
-            private int bufferLength = 1024;
+            private final Thread thread = this;
+            private final int bufferLength = 1024;
 
-            public void run() {
+            @Override
+			public void run() {
                 try {
                     char[] cbuf = new char[bufferLength];
                     while (readerConsumer == thread && !done) {
@@ -663,7 +680,8 @@ public class BOSHConnection extends Connection {
      *
      * @param e the exception that causes the connection close event.
      */
-    protected void notifyConnectionError(Exception e) {
+    @Override
+	protected void notifyConnectionError(Exception e) {
         // Closes the connection temporary. A reconnection is possible
         shutdown(new Presence(Presence.Type.unavailable));
         // Print the stack trace to help catch the problem
@@ -701,7 +719,8 @@ public class BOSHConnection extends Connection {
          * Process the connection listeners and try to login if the
          * connection was formerly authenticated and is now reconnected.
          */
-        public void connectionEvent(BOSHClientConnEvent connEvent) {
+        @Override
+		public void connectionEvent(BOSHClientConnEvent connEvent) {
             try {
                 if (connEvent.isConnected()) {
                     connected = true;
@@ -755,13 +774,14 @@ public class BOSHConnection extends Connection {
      */
     private class ListenerNotification implements Runnable {
 
-        private Packet packet;
+        private final Packet packet;
 
         public ListenerNotification(Packet packet) {
             this.packet = packet;
         }
 
-        public void run() {
+        @Override
+		public void run() {
             for (ListenerWrapper listenerWrapper : recvListeners.values()) {
                 listenerWrapper.notifyListener(packet);
             }
@@ -776,4 +796,55 @@ public class BOSHConnection extends Connection {
 		}
 		this.rosterStorage = storage;
 	}
+
+	@Override
+	boolean isSocketClosed() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	boolean hasPacketReader() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	void setConnectionID(String connectionID) {
+		throw new UnsupportedOperationException();		
+	}
+
+	@Override
+	ParsingExceptionCallback getParsingExceptionCallback() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	void streamCompressionDenied() {
+		throw new UnsupportedOperationException();		
+	}
+
+	@Override
+	void proceedTLSReceived() throws Exception {
+		throw new UnsupportedOperationException();		
+	}
+
+	@Override
+	void openWriterStream() throws IOException {
+		throw new UnsupportedOperationException();		
+	}
+
+	@Override
+	void startStreamCompression() throws Exception {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	void setAvailableCompressionMethods(Collection<String> methods) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	void startTLSReceived(boolean required) {
+		throw new UnsupportedOperationException();
+	}
+	
 }

@@ -42,10 +42,11 @@ import org.jivesoftware.smack.packet.Packet;
  */
 public class PacketCollector {
 
-    private PacketFilter packetFilter;
-    private ArrayBlockingQueue<Packet> resultQueue;
-    private Connection connection;
-    private boolean cancelled = false;
+    private final PacketFilter packetFilter;
+    private final ArrayBlockingQueue<Packet> resultQueue;
+    private final Connection connection;
+    private boolean canceled = false;
+    private Object lock = new Object();
 
     /**
      * Creates a new packet collector. If the packet filter is <tt>null</tt>, then
@@ -58,7 +59,25 @@ public class PacketCollector {
     	this(conection, packetFilter, SmackConfiguration.getPacketCollectorSize());
     }
 
-    /**
+	/**
+	 * Set the lock used for notifying about new packages.
+	 * Used by {@link LLService.CollectorWrapper}.
+	 * 
+	 * @param lock
+	 *            the new lock object.
+	 * @see LLService.CollectorWrapper
+	 */
+	public synchronized void setLock(Object lock) {
+		Object oldLock = this.lock;
+		this.lock = lock;
+
+		// release the threads waiting for a notify on the old lock
+		synchronized (oldLock) {
+			oldLock.notifyAll();
+		}
+	}
+
+	/**
      * Creates a new packet collector. If the packet filter is <tt>null</tt>, then
      * all packets will match this collector.
      *
@@ -79,11 +98,20 @@ public class PacketCollector {
      */
     public void cancel() {
         // If the packet collector has already been cancelled, do nothing.
-        if (!cancelled) {
-            cancelled = true;
+        if (!canceled) {
+            canceled = true;
             connection.removePacketCollector(this);
         }
     }
+
+	/**
+	 * Returns true if the packet collector is canceled.
+	 * 
+	 * @return true if canceled, false if still active.
+	 */
+	public boolean isCanceled() {
+		return canceled;
+	}
 
     /**
      * Returns the packet filter associated with this packet collector. The packet
@@ -115,7 +143,11 @@ public class PacketCollector {
      */
     public Packet nextResult() {
         try {
-			return resultQueue.take();
+			final Packet packet = resultQueue.take();
+			if (lock != null) {
+				lock.notifyAll();
+			}
+			return packet;
 		}
 		catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -132,7 +164,11 @@ public class PacketCollector {
      */
     public Packet nextResult(long timeout) {
     	try {
-			return resultQueue.poll(timeout, TimeUnit.MILLISECONDS);
+			final Packet packet = resultQueue.poll(timeout, TimeUnit.MILLISECONDS);
+			if (packet != null && lock != null) {
+				lock.notifyAll();
+			}
+			return packet;
 		}
 		catch (InterruptedException e) {
 			throw new RuntimeException(e);

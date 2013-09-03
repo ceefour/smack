@@ -30,7 +30,7 @@ import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.util.Base32Encoder;
 import org.jivesoftware.smack.util.Base64Encoder;
 import org.jivesoftware.smack.util.StringEncoder;
-import org.jivesoftware.smackx.entitycaps.EntityCapsManager;
+import org.jivesoftware.smackx.entitycaps.DefaultEntityCapsManager;
 import org.jivesoftware.smackx.packet.DiscoverInfo;
 import org.jivesoftware.smackx.provider.DiscoverInfoProvider;
 import org.xmlpull.mxp1.MXParser;
@@ -105,7 +105,7 @@ public class SimpleDirectoryPersistentCache implements EntityCapsPersistentCache
             if (info == null)
                 continue;
 
-            EntityCapsManager.addDiscoverInfoByNode(node, info);
+            DefaultEntityCapsManager.addDiscoverInfoByNode(node, info);
         }
     }
 

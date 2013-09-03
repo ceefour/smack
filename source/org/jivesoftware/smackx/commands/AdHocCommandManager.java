@@ -265,7 +265,7 @@ public class AdHocCommandManager {
 
         // Add a listener to the connection that removes the registered instance
         // when the connection is closed
-        connection.addConnectionListener(new ConnectionListener() {
+        connection.addConnectionListener(new AbstractConnectionListener() {
             public void connectionClosed() {
                 // Unregister this instance since the connection has been closed
                 instances.remove(connection);

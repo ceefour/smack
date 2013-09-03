@@ -20,16 +20,39 @@
 
 package org.jivesoftware.smack.debugger;
 
-import java.awt.*;
-import java.awt.datatransfer.*;
-import java.awt.event.*;
-import java.io.*;
+import java.awt.Color;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.Reader;
+import java.io.Writer;
 
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 
-import org.jivesoftware.smack.*;
-import org.jivesoftware.smack.packet.*;
-import org.jivesoftware.smack.util.*;
+import org.jivesoftware.smack.Connection;
+import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPLLConnection;
+import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.util.ObservableReader;
+import org.jivesoftware.smack.util.ObservableWriter;
+import org.jivesoftware.smack.util.ReaderListener;
+import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smack.util.WriterListener;
 
 /**
  * The LiteDebugger is a very simple debugger that allows to debug sent, received and 
@@ -58,6 +81,14 @@ public class LiteDebugger implements SmackDebugger {
         createDebug();
     }
 
+    public LiteDebugger(XMPPConnection connection, Writer writer, Reader reader) {
+        this((Connection)connection, writer, reader);
+    }
+
+    public LiteDebugger(XMPPLLConnection connection, Writer writer, Reader reader) {
+        this((Connection)connection, writer, reader);
+    }
+
     /**
      * Creates the debug process, which is a GUI window that displays XML traffic.
      */
@@ -67,7 +98,8 @@ public class LiteDebugger implements SmackDebugger {
 
         // Add listener for window closing event 
         frame.addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent evt) {
+            @Override
+			public void windowClosing(WindowEvent evt) {
                 rootWindowClosing(evt);
             }
         });
@@ -95,7 +127,8 @@ public class LiteDebugger implements SmackDebugger {
         JPopupMenu menu = new JPopupMenu();
         JMenuItem menuItem1 = new JMenuItem("Copy");
         menuItem1.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            @Override
+			public void actionPerformed(ActionEvent e) {
                 // Get the clipboard
                 Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                 // Set the sent text as the new content of the clipboard
@@ -105,7 +138,8 @@ public class LiteDebugger implements SmackDebugger {
 
         JMenuItem menuItem2 = new JMenuItem("Clear");
         menuItem2.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            @Override
+			public void actionPerformed(ActionEvent e) {
                 sentText1.setText("");
                 sentText2.setText("");
             }
@@ -132,7 +166,8 @@ public class LiteDebugger implements SmackDebugger {
         menu = new JPopupMenu();
         menuItem1 = new JMenuItem("Copy");
         menuItem1.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            @Override
+			public void actionPerformed(ActionEvent e) {
                 // Get the clipboard
                 Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                 // Set the sent text as the new content of the clipboard
@@ -142,7 +177,8 @@ public class LiteDebugger implements SmackDebugger {
 
         menuItem2 = new JMenuItem("Clear");
         menuItem2.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            @Override
+			public void actionPerformed(ActionEvent e) {
                 receivedText1.setText("");
                 receivedText2.setText("");
             }
@@ -169,7 +205,8 @@ public class LiteDebugger implements SmackDebugger {
         menu = new JPopupMenu();
         menuItem1 = new JMenuItem("Copy");
         menuItem1.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            @Override
+			public void actionPerformed(ActionEvent e) {
                 // Get the clipboard
                 Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                 // Set the sent text as the new content of the clipboard
@@ -179,7 +216,8 @@ public class LiteDebugger implements SmackDebugger {
 
         menuItem2 = new JMenuItem("Clear");
         menuItem2.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            @Override
+			public void actionPerformed(ActionEvent e) {
                 interpretedText1.setText("");
                 interpretedText2.setText("");
             }
@@ -200,7 +238,8 @@ public class LiteDebugger implements SmackDebugger {
         // Create a special Reader that wraps the main Reader and logs data to the GUI.
         ObservableReader debugReader = new ObservableReader(reader);
         readerListener = new ReaderListener() {
-                    public void read(String str) {
+                    @Override
+					public void read(String str) {
                         int index = str.lastIndexOf(">");
                         if (index != -1) {
                             receivedText1.append(str.substring(0, index + 1));
@@ -223,7 +262,8 @@ public class LiteDebugger implements SmackDebugger {
         // Create a special Writer that wraps the main Writer and logs data to the GUI.
         ObservableWriter debugWriter = new ObservableWriter(writer);
         writerListener = new WriterListener() {
-                    public void write(String str) {
+                    @Override
+					public void write(String str) {
                         sentText1.append(str);
                         sentText2.append(str);
                         if (str.endsWith(">")) {
@@ -243,7 +283,8 @@ public class LiteDebugger implements SmackDebugger {
         // the GUI. This is what we call "interpreted" packet data, since it's the packet
         // data as Smack sees it and not as it's coming in as raw XML.
         listener = new PacketListener() {
-            public void processPacket(Packet packet) {
+            @Override
+			public void processPacket(Packet packet) {
                 interpretedText1.append(packet.toXML());
                 interpretedText2.append(packet.toXML());
                 interpretedText1.append(NEWLINE);
@@ -274,11 +315,13 @@ public class LiteDebugger implements SmackDebugger {
             popup = popupMenu;
         }
 
-        public void mousePressed(MouseEvent e) {
+        @Override
+		public void mousePressed(MouseEvent e) {
             maybeShowPopup(e);
         }
 
-        public void mouseReleased(MouseEvent e) {
+        @Override
+		public void mouseReleased(MouseEvent e) {
             maybeShowPopup(e);
         }
 
@@ -289,7 +332,8 @@ public class LiteDebugger implements SmackDebugger {
         }
     }
 
-    public Reader newConnectionReader(Reader newReader) {
+    @Override
+	public Reader newConnectionReader(Reader newReader) {
         ((ObservableReader)reader).removeReaderListener(readerListener);
         ObservableReader debugReader = new ObservableReader(newReader);
         debugReader.addReaderListener(readerListener);
@@ -297,7 +341,8 @@ public class LiteDebugger implements SmackDebugger {
         return reader;
     }
 
-    public Writer newConnectionWriter(Writer newWriter) {
+    @Override
+	public Writer newConnectionWriter(Writer newWriter) {
         ((ObservableWriter)writer).removeWriterListener(writerListener);
         ObservableWriter debugWriter = new ObservableWriter(newWriter);
         debugWriter.addWriterListener(writerListener);
@@ -305,7 +350,8 @@ public class LiteDebugger implements SmackDebugger {
         return writer;
     }
 
-    public void userHasLogged(String user) {
+    @Override
+	public void userHasLogged(String user) {
         boolean isAnonymous = "".equals(StringUtils.parseName(user));
         String title =
             "Smack Debug Window -- "
@@ -318,19 +364,23 @@ public class LiteDebugger implements SmackDebugger {
         frame.setTitle(title);
     }
 
-    public Reader getReader() {
+    @Override
+	public Reader getReader() {
         return reader;
     }
 
-    public Writer getWriter() {
+    @Override
+	public Writer getWriter() {
         return writer;
     }
 
-    public PacketListener getReaderListener() {
+    @Override
+	public PacketListener getReaderListener() {
         return listener;
     }
 
-    public PacketListener getWriterListener() {
+    @Override
+	public PacketListener getWriterListener() {
         return null;
     }
 }
