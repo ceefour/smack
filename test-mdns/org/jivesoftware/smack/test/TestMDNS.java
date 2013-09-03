@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jivesoftware.smack.JmDNSService;
 import org.jivesoftware.smack.LLChat;
@@ -31,6 +33,7 @@ public class TestMDNS {
     }
 
     public void run() {
+    	LLServiceDiscoveryManager.registerLLServiceListener();
         try {
             // Initiate stdin buffer for reading commands (the fancy UI)
             BufferedReader stdIn = new BufferedReader(
@@ -39,7 +42,10 @@ public class TestMDNS {
             // Create some kind of user name
             String name = "smack-mdns@localhost";
             try {
-                name = System.getenv("USERNAME") + "@" + java.net.InetAddress.getLocalHost().getHostName();
+                Matcher matcher = Pattern.compile("([^.]+).*").matcher(java.net.InetAddress.getLocalHost().getHostName());
+                matcher.matches();
+                final String shortHostName = matcher.group(1);
+				name = System.getenv("USERNAME") + "@" + shortHostName;
             } catch (Exception e) {}
 
             System.out.println("Link-local presence name set to '" + name + "'");

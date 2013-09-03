@@ -2,6 +2,7 @@ package org.jivesoftware.smack;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Hashtable;
 
 import javax.annotation.PreDestroy;
@@ -101,8 +102,10 @@ public class JmDNSService extends LLService implements Closeable {
                 ht.put(t.a, t.b);
         }
         serviceInfo = ServiceInfo.create(SERVICE_TYPE,
-                presence.getServiceName(), presence.getPort(), 0, 0, ht);
+                presence.getServiceName(), presence.getPort(), 0, 0, new HashMap<String, String>());//ht);
         try {
+        	log.info("Registering XMPP Presence '" + serviceInfo.getType() + "' service '" + serviceInfo.getName() + "' at port " + serviceInfo.getPort() +
+        			" using " + ht);
             jmdns.registerService(serviceInfo);
         }
         catch (IOException ioe) {

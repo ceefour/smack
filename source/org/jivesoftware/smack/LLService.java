@@ -1,30 +1,29 @@
 package org.jivesoftware.smack;
 
 
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.IQ;
-import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.filter.PacketFilter;
-import org.jivesoftware.smack.filter.AndFilter;
-import org.jivesoftware.smack.filter.OrFilter;
-import org.jivesoftware.smack.filter.PacketIDFilter;
-import org.jivesoftware.smack.filter.PacketTypeFilter;
-import org.jivesoftware.smack.filter.MessageTypeFilter;
-import org.jivesoftware.smack.filter.IQTypeFilter;
-
-
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.Map;
-import java.util.LinkedList;
-import java.util.ArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.jivesoftware.smack.filter.AndFilter;
+import org.jivesoftware.smack.filter.IQTypeFilter;
+import org.jivesoftware.smack.filter.MessageTypeFilter;
+import org.jivesoftware.smack.filter.OrFilter;
+import org.jivesoftware.smack.filter.PacketFilter;
+import org.jivesoftware.smack.filter.PacketIDFilter;
+import org.jivesoftware.smack.filter.PacketTypeFilter;
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Packet;
 
 /**
  * LLService acts as an abstract interface to a Link-local XMPP service
@@ -52,6 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Jonas Ådahl
  */
 public abstract class LLService {
+	private static Log log = LogFactory.getLog(LLService.class);
     private LLService service = null;
 
     // Listeners for new services
@@ -61,27 +61,27 @@ public abstract class LLService {
     static final int DEFAULT_MIN_PORT = 2300;
     static final int DEFAULT_MAX_PORT = 2400;
     protected LLPresence presence;
-    private String serviceName;
-    private String host;
+    private final String serviceName;
+    private final String host;
     private boolean done = false;
     private Thread listenerThread;
 
     private boolean initiated = false;
 
-    private Map<String,LLChat> chats =
+    private final Map<String,LLChat> chats =
         new ConcurrentHashMap<String,LLChat>();
 
-    private Map<String,XMPPLLConnection> ingoing =
+    private final Map<String,XMPPLLConnection> ingoing =
         new ConcurrentHashMap<String,XMPPLLConnection>();
-    private Map<String,XMPPLLConnection> outgoing =
+    private final Map<String,XMPPLLConnection> outgoing =
         new ConcurrentHashMap<String,XMPPLLConnection>();
 
     // Listeners for state updates, such as LLService closed down
-    private Set<LLServiceStateListener> stateListeners =
+    private final Set<LLServiceStateListener> stateListeners =
         new CopyOnWriteArraySet<LLServiceStateListener>();
 
     // Listeners for XMPPLLConnections associated with this service
-    private Set<LLServiceConnectionListener> llServiceConnectionListeners =
+    private final Set<LLServiceConnectionListener> llServiceConnectionListeners =
         new CopyOnWriteArraySet<LLServiceConnectionListener>();
 
     // Listeners for packets coming from this Link-local service
@@ -89,17 +89,17 @@ public abstract class LLService {
             new ConcurrentHashMap<PacketListener, ListenerWrapper>();
 
     // Presence discoverer, notifies of changes in presences on the network.
-    private LLPresenceDiscoverer presenceDiscoverer;
+    private final LLPresenceDiscoverer presenceDiscoverer;
 
     // chat listeners gets notified when new chats are created
-    private Set<LLChatListener> chatListeners = new CopyOnWriteArraySet<LLChatListener>();
+    private final Set<LLChatListener> chatListeners = new CopyOnWriteArraySet<LLChatListener>();
     
     // Set of Packet collector wrappers
-    private Set<CollectorWrapper> collectorWrappers =
+    private final Set<CollectorWrapper> collectorWrappers =
         new CopyOnWriteArraySet<CollectorWrapper>();
 
     // Set of associated connections.
-    private Set<XMPPLLConnection> associatedConnections =
+    private final Set<XMPPLLConnection> associatedConnections =
         new HashSet<XMPPLLConnection>();
 
     private ServerSocket socket;
@@ -135,7 +135,8 @@ public abstract class LLService {
         service = this;
 
         XMPPLLConnection.addLLConnectionListener(new LLConnectionListener() {
-            public void connectionCreated(XMPPLLConnection connection) {
+            @Override
+			public void connectionCreated(XMPPLLConnection connection) {
                 // We only care about this connection if we were the one
                 // creating it
                 if (isAssociatedConnection(connection)) {
@@ -203,6 +204,7 @@ public abstract class LLService {
      * @param service the new service.
      */
     public static void notifyServiceListeners(LLService service) {
+    	log.info("Notifying serviceCreated event to " + serviceCreatedListeners.size() + " LLServiceListeners");
         for (LLServiceListener listener : serviceCreatedListeners) {
             listener.serviceCreated(service);
         }
@@ -252,7 +254,8 @@ public abstract class LLService {
 
         // start to listen for new connections
         listenerThread = new Thread() {
-            public void run() {
+            @Override
+			public void run() {
                 try {
                     listenForConnections();
                     for (LLServiceStateListener listener : stateListeners)
@@ -720,27 +723,32 @@ public abstract class LLService {
      * what active connections exist up to date.
      */
     private class ConnectionActivityListener implements ConnectionListener {
-        private XMPPLLConnection connection;
+        private final XMPPLLConnection connection;
 
         ConnectionActivityListener(XMPPLLConnection connection) {
             this.connection = connection;
         }
 
-        public void connectionClosed() {
+        @Override
+		public void connectionClosed() {
             removeConnectionRecord();
         }
 
-        public void connectionClosedOnError(Exception e) {
+        @Override
+		public void connectionClosedOnError(Exception e) {
             removeConnectionRecord();
         }
 
-        public void reconnectingIn(int seconds) {
+        @Override
+		public void reconnectingIn(int seconds) {
         }
 
-        public void reconnectionSuccessful() {
+        @Override
+		public void reconnectionSuccessful() {
         }
 
-        public void reconnectionFailed(Exception e) {
+        @Override
+		public void reconnectionFailed(Exception e) {
         }
 
         private void removeConnectionRecord() {
@@ -759,13 +767,14 @@ public abstract class LLService {
      * is created.
      */
     private class MessageListener implements PacketListener {
-        private LLService service;
+        private final LLService service;
 
         MessageListener(LLService service) {
             this.service = service;
         }
 
-        public void processPacket(Packet packet) {
+        @Override
+		public void processPacket(Packet packet) {
             // handle message
             if (packet instanceof Message) {
                 Message message = (Message)packet;
@@ -797,7 +806,8 @@ public abstract class LLService {
             this.connection = connection;
         }
 
-        public void run() {
+        @Override
+		public void run() {
             try {
                 connection.initListen();
             }
@@ -813,8 +823,8 @@ public abstract class LLService {
      */
     private static class ListenerWrapper {
 
-        private PacketListener packetListener;
-        private PacketFilter packetFilter;
+        private final PacketListener packetListener;
+        private final PacketFilter packetFilter;
 
         public ListenerWrapper(PacketListener packetListener, PacketFilter packetFilter) {
             this.packetListener = packetListener;
@@ -843,15 +853,15 @@ public abstract class LLService {
      */
     public class CollectorWrapper {
         // Existing collectors.
-        private Set<PacketCollector> collectors =
+        private final Set<PacketCollector> collectors =
             new CopyOnWriteArraySet<PacketCollector>();
 
         // Packet filter for all the collectors.
-        private PacketFilter packetFilter;
+        private final PacketFilter packetFilter;
 
         // A common object used for shared locking between
         // the collectors.
-        private Object lock = new Object();
+        private final Object lock = new Object();
 
         private CollectorWrapper(PacketFilter packetFilter) {
             this.packetFilter = packetFilter;

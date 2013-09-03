@@ -51,7 +51,11 @@ public class LLServiceDiscoveryManager {
         XMPPLLConnection.addLLConnectionListener(new ConnectionServiceMaintainer());
     }*/
 
-    static {
+    /**
+     * static { } block doesn't really work, so you must call this 
+     */
+    public static void registerLLServiceListener() {
+    	log.info("Adding LLServiceListener by LLServiceDiscoveryManager");
         LLService.addLLServiceListener(new LLServiceListener() {
             @Override
 			public void serviceCreated(LLService service) {
