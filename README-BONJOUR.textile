@@ -1,0 +1,65 @@
+It sort of works... it can detect other (Pidgin) but Pidgin doesn't detect smack.
+
+avahi-browse reveals that it probably gives the wrong type & domain: 
+
+bc. > avahi-browse -a -k -v
+Server version: avahi 0.6.31; Host name: amanah.local
+E Ifce Prot Name                                          Type                 Domain
++   usb0 IPv6 amanah [0e:2f:8e:a8:c6:7b]                    _workstation._tcp    local
++   usb0 IPv4 amanah [0e:2f:8e:a8:c6:7b]                    _workstation._tcp    local
++   usb0 IPv6 amanah                                        _udisks-ssh._tcp     local
++   usb0 IPv4 amanah                                        _udisks-ssh._tcp     local
++   usb0 IPv6 hendypc@amanah                                _presence._tcp       local
++   usb0 IPv4 ceefour@amanah                                                     dev._presence._tcp.local
++   usb0 IPv4 hendypc@amanah                                _presence._tcp       local
+: Cache exhausted
+: All for now
+
+I've tried with my own simple example: (using the same jmdns-kohsuke.jar)
+
+bc. 	@Test
+	public void register() throws InterruptedException, IOException {
+		try (final JmDNS jmdns = JmDNS.create()) {
+			final ServiceInfo serviceInfo = ServiceInfo.create("_presence._tcp.local.",
+	                "something@amanah", 2300, 0, 0, new HashMap<String, Object>());
+			jmdns.registerService(serviceInfo);
+			Thread.sleep(5000);
+		}
+	}
+
+and it "works", i.e. correct service type and domain:
+
+bc. +   usb0 IPv4 something@amanah                              _presence._tcp       local
+-   usb0 IPv4 something@amanah                              _presence._tcp       local
+
+So that was due to wrong service name (must not contain ".", i.e. not the host FQDN):
+
+bc. +   usb0 IPv4 ceefour@amanah                                _presence._tcp       local
+
+But smack still not detected by Pidgin, sending message throws exception: 
+
+bc. > msg
+Enter user: hendypc@amanah
+Enter message: hai
+Discovered new chat being created.
+java.io.EOFException: input contained no data
+	at org.xmlpull.mxp1.MXParser.fillBuf(MXParser.java:3003)
+	at org.xmlpull.mxp1.MXParser.more(MXParser.java:3046)
+	at org.xmlpull.mxp1.MXParser.parseProlog(MXParser.java:1410)
+	at org.xmlpull.mxp1.MXParser.nextImpl(MXParser.java:1395)
+	at org.xmlpull.mxp1.MXParser.next(MXParser.java:1093)
+	at org.jivesoftware.smack.AbstractPacketReader.parsePackets(AbstractPacketReader.java:324)
+	at org.jivesoftware.smack.AbstractPacketReader.access$1(AbstractPacketReader.java:184)
+	at org.jivesoftware.smack.AbstractPacketReader$1.run(AbstractPacketReader.java:79)
+Cought XMPPException: Connection failed. No response from server.: 
+Connection failed. No response from server.: 
+	at org.jivesoftware.smack.AbstractPacketReader.startup(AbstractPacketReader.java:125)
+	at org.jivesoftware.smack.LLPacketReader.startup(LLPacketReader.java:1)
+	at org.jivesoftware.smack.XMPPLLConnection.initConnection(XMPPLLConnection.java:358)
+	at org.jivesoftware.smack.XMPPLLConnection.connect(XMPPLLConnection.java:256)
+	at org.jivesoftware.smack.LLService.getConnection(LLService.java:620)
+	at org.jivesoftware.smack.LLService.sendPacket(LLService.java:644)
+	at org.jivesoftware.smack.LLService.sendMessage(LLService.java:633)
+	at org.jivesoftware.smack.LLChat.sendMessage(LLChat.java:78)
+	at org.jivesoftware.smack.test.TestMDNS.run(TestMDNS.java:108)
+	at org.jivesoftware.smack.test.TestMDNS.main(TestMDNS.java:32)
