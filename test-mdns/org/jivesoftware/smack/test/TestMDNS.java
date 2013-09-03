@@ -1,17 +1,23 @@
 package org.jivesoftware.smack.test;
 
-import org.jivesoftware.smack.*;
-import org.jivesoftware.smack.packet.*;
-import org.jivesoftware.smackx.*;
-import org.jivesoftware.smackx.packet.*;
-
-import javax.jmdns.*;
 //import javax.jmdns.impl.SocketListener;
-import java.io.*;
-import java.util.HashMap;
-import java.util.logging.*;
-import java.lang.Runtime;
-import java.util.logging.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
+
+import org.jivesoftware.smack.JmDNSService;
+import org.jivesoftware.smack.LLChat;
+import org.jivesoftware.smack.LLChatListener;
+import org.jivesoftware.smack.LLMessageListener;
+import org.jivesoftware.smack.LLPresence;
+import org.jivesoftware.smack.LLService;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smackx.LLServiceDiscoveryManager;
+import org.jivesoftware.smackx.packet.DiscoverInfo;
 
 public class TestMDNS {
     LLService service;
@@ -47,7 +53,7 @@ public class TestMDNS {
             // Adding presence listener.
             service.addPresenceListener(new MDNSListener());
 
-            System.out.println("Prepering link-local service discovery...");
+            System.out.println("Preparing link-local service discovery...");
             // As we want to play with service discovery, initiate the wrapper
             LLServiceDiscoveryManager disco = LLServiceDiscoveryManager.getInstanceFor(service);
 
@@ -84,7 +90,8 @@ public class TestMDNS {
                         done = true;
                     else if ("spam".equals(line)) {
                         service.spam();
-                        ServiceDiscoveryManager.spam();
+                        // FIXME: not implemented by 3.4.0
+//                        ServiceDiscoveryManager.spam();
                     }
                     else if ("msg".equals(line)) {
                         System.out.print("Enter user: ");
@@ -142,7 +149,8 @@ public class TestMDNS {
             this.service = service;
         }
 
-        public void run () {
+        @Override
+		public void run () {
             System.out.println("### Unregistering service....");
             //service.makeUnavailable();
             System.out.println("### Done, now closing daemon...");
@@ -158,7 +166,8 @@ public class TestMDNS {
     private class MyChatListener implements LLChatListener {
         public MyChatListener() {}
 
-        public void newChat(LLChat chat) {
+        @Override
+		public void newChat(LLChat chat) {
             System.out.println("Discovered new chat being created.");
             chat.addMessageListener(new MyMessageListener(chat));
         }
@@ -171,7 +180,8 @@ public class TestMDNS {
             this.chat = chat;
         }
 
-        public void processMessage(LLChat chat, Message message) {
+        @Override
+		public void processMessage(LLChat chat, Message message) {
             try {
                 if (message.getBody().equals("ping")) {
                     chat.sendMessage("pong");

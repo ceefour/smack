@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.LLPresence;
 import org.jivesoftware.smack.LLPresenceListener;
@@ -32,6 +34,7 @@ import org.jivesoftware.smackx.packet.DiscoverItems;
  * @author Jonas Ådahl
  */
 public class LLServiceDiscoveryManager {
+	private static Log log = LogFactory.getLog(LLServiceDiscoveryManager.class);
     private static Map<LLService,LLServiceDiscoveryManager> serviceManagers =
         new ConcurrentHashMap<LLService,LLServiceDiscoveryManager>();
 
@@ -52,6 +55,7 @@ public class LLServiceDiscoveryManager {
         LLService.addLLServiceListener(new LLServiceListener() {
             @Override
 			public void serviceCreated(LLService service) {
+            	log.info("Adding LLServiceDiscoveryManager for LLService " + service);
                 addLLServiceDiscoveryManager(
                     new LLServiceDiscoveryManager(service));
             }
